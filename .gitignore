@@ -1,0 +1,7 @@
+*.pyc
+*.pyo
+*.swp
+*.swo
+.idea
+pip-log.txt*
+*.swn
