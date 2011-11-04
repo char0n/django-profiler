@@ -1,0 +1,3 @@
+distribute==0.6.10
+profilehooks==1.5
+wsgiref==0.1.2
