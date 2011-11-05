@@ -1,6 +1,9 @@
 import logging
 from time import time
-from profilehooks import profile as hook_profile
+try:
+    from profilehooks import profile as hook_profile
+except Exception:
+    pass
 try:
     from django.db import connection
 except Exception:
@@ -106,41 +109,41 @@ class Profiler(object):
         self.stop()
         return False
 
+if globals().has_key('hook_profile'):
+    def profilehook(func):
+        """
+        Decorator for profiling functions and class methods with addition
+        of profilehooks package output with execution statistics.
 
-def profilehook(func):
-    """
-    Decorator for profiling functions and class methods with addition
-    of profilehooks package output with execution statistics.
+        :param func: decorated function object (bound or unbound)
+        :type func: types.FunctionType
+        :returns: wrapped function object
+        :rtype: types.FunctionType
 
-    :param func: decorated function object (bound or unbound)
-    :type func: types.FunctionType
-    :returns: wrapped function object
-    :rtype: types.FunctionType
+        """
+        def wrapper(func):
+            def inner_wrapper(*args, **kwargs):
+                if args and hasattr(args[0], '__class__') and args[0].__class__.__dict__.get(func.__name__) is not None \
+                    and args[0].__class__.__dict__.get(func.__name__).__name__ == func.__name__:
+                    profiler_name = '%s.%s' % (args[0].__class__.__name__, func.__name__)
+                else:
+                    profiler_name = func.__name__
+                with Profiler(profiler_name):
+                    to_return = func(*args, **kwargs)
+                return to_return
+            inner_wrapper.__doc__ = func.__doc__
+            inner_wrapper.__name__ = func.__name__
+            inner_wrapper.__dict__ = func.__dict__
+            inner_wrapper.__module__ = func.__module__
+            return inner_wrapper
 
-    """
-    def wrapper(func):
-        def inner_wrapper(*args, **kwargs):
-            if args and hasattr(args[0], '__class__') and args[0].__class__.__dict__.get(func.__name__) is not None \
-                and args[0].__class__.__dict__.get(func.__name__).__name__ == func.__name__:
-                profiler_name = '%s.%s' % (args[0].__class__.__name__, func.__name__)
-            else:
-                profiler_name = func.__name__
-            with Profiler(profiler_name):
-                to_return = func(*args, **kwargs)
-            return to_return
-        inner_wrapper.__doc__ = func.__doc__
-        inner_wrapper.__name__ = func.__name__
-        inner_wrapper.__dict__ = func.__dict__
-        inner_wrapper.__module__ = func.__module__
-        return inner_wrapper
-
-    w = wrapper(hook_profile(fn=func, immediate=True))
-    w.__doc__ = func.__doc__
-    w.__name__ = func.__name__
-    w.__dict__ = func.__dict__
-    w.__module__ = func.__module__
-    return w
-
+        w = wrapper(hook_profile(fn=func, immediate=True))
+        w.__doc__ = func.__doc__
+        w.__name__ = func.__name__
+        w.__dict__ = func.__dict__
+        w.__module__ = func.__module__
+        return w
+    
 
 def profile(func):
     """Decorator for profiling functions and class methods.
