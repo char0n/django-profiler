@@ -8,8 +8,21 @@ except Exception:
 
 
 class Profiler(object):
-
+    """
+    Util for profiling python code mainly in django projects,
+    but can be used also on ordinary python code
+    
+    """
     def __init__(self, name, start=False):
+        """Constructor
+
+        :param name: name of the Profiler instance
+        :type name: string
+        :param start: boolean
+        :returns: Profiler instance
+        :rtype: Profiler
+
+        """
         logger_name = __name__
         if name.find(' ') == -1:
             logger_name += '.%s' % name
@@ -20,6 +33,12 @@ class Profiler(object):
             self.start()
 
     def get_duration_seconds(self):
+        """Getting duration of profiling in seconds.
+
+        :returns: duration of profiling in seconds
+        :rtype: float
+
+        """
         if hasattr(self, 'stop_time'):
             stop_time = self.stop_time
         else:
@@ -28,20 +47,35 @@ class Profiler(object):
         return delta
 
     def get_duration_milliseconds(self):
+        """Getting duration of profiling in milliseconds.
+
+        :returns: duration of profiling in milliseconds
+        :rtype: float
+
+        """
         return round(self.get_duration_seconds() * 1000, 6)
 
     def get_duration_microseconds(self):
+        """Getting duration of profiling in microseconds.
+
+        :returns: duration of profiling in microseconds
+        :rtype: float
+
+        """
         return round(self.get_duration_seconds() * 1000000, 6)
 
     def start(self):
+        """
+        Starting profiler mechanism. We strongly recommend not to use this
+        method directly, but rather use Profiler as context manager.
+        """
         self.start_time = time()
         self.pre_queries_cnt = len(connection.queries) if globals().has_key('connection') else 0
 
     def stop(self):
         """
-        If Exception is intercepted, profiler will end prematurely and counts the
-        time only to the point of Exception raising
-
+        Stopping profiler mechanism. We strongly recommend not to use this
+        method directly, but rather use Profiler as context manager.
 
         """
         if not hasattr(self, 'start_time'):
@@ -66,13 +100,23 @@ class Profiler(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.stop()
         if exc_type is not None and exc_value is not None and traceback is not None:
             self.log.exception('%s: Exception "%s" with value "%s" intercepted while profiling', self.name, exc_type, exc_value)
+        self.stop()
         return False
 
 
 def profilehook(func):
+    """
+    Decorator for profiling functions and class methods with addition
+    of profilehooks package output with execution statistics.
+
+    :param func: decorated function object (bound or unbound)
+    :type func: types.FunctionType
+    :returns: wrapped function object
+    :rtype: types.FunctionType
+
+    """
     def wrapper(func):
         def inner_wrapper(*args, **kwargs):
             if args and hasattr(args[0], '__class__') and args[0].__class__.__dict__.get(func.__name__) is not None \
@@ -98,6 +142,14 @@ def profilehook(func):
 
 
 def profile(func):
+    """Decorator for profiling functions and class methods.
+
+    :param func: decorated function object (bound or unbound)
+    :type func: types.FunctionType
+    :returns: wrapped function object
+    :rtype: types.FunctionType
+
+    """
     def wrapper(*args, **kwargs):
         if args and hasattr(args[0], '__class__') and args[0].__class__.__dict__.get(func.__name__) is not None \
             and args[0].__class__.__dict__.get(func.__name__).__name__ == func.__name__:

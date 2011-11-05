@@ -4,6 +4,7 @@ import unittest
 import time
 from StringIO import StringIO
 import sys
+import types
 
 log = logging.getLogger(profiling.__name__)
 log.setLevel(logging.DEBUG)
@@ -27,16 +28,19 @@ class ProfilerTest(unittest.TestCase):
     def test_get_duration_seconds(self):
         with profiling.Profiler('profiler1') as profiler:
             time.sleep(0.1)
+        self.assertIsInstance(profiler.get_duration_seconds(), float)
         self.assertGreaterEqual(profiler.get_duration_seconds(), 0.1)
 
     def test_get_duration_milliseconds(self):
         with profiling.Profiler('profiler1') as profiler:
             time.sleep(0.1)
+        self.assertIsInstance(profiler.get_duration_milliseconds(), float)
         self.assertGreaterEqual(profiler.get_duration_milliseconds(), 0.1 * 1000)
 
     def test_get_duration_microseconds(self):
         with profiling.Profiler('profiler1') as profiler:
             time.sleep(0.1)
+        self.assertIsInstance(profiler.get_duration_microseconds(), float)
         self.assertGreaterEqual(profiler.get_duration_microseconds(), 0.1 * 1000000)
 
     def test_profiler_context(self):
@@ -276,10 +280,24 @@ class ProfilerLoggingTest(unittest.TestCase):
         self.assertEqual(log.handlers[0].get_log_events()[0].name, '%s.%s' % (profiling.__name__, 'Class.method'))
 
     def test_exception_interception_context(self):
-        pass
+        with self.assertRaises(Exception):
+            with profiling.Profiler('profiler1'):
+                time.sleep(0.1)
+                raise Exception('Intercepting Exception')
+                time.sleep(0.1)
+        self.assertEqual(len(log.handlers[0].get_log_events()), 2)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^profiler1: Exception "<type \'exceptions.Exception\'>" with value "Intercepting Exception" intercepted while profiling$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^profiler1 took: [0-9\.]+ ms$')
 
     def test_exception_interception_no_context(self):
-        pass
+        with self.assertRaises(Exception):
+            profiler = profiling.Profiler('profiler1')
+            profiler.start()
+            time.sleep(0.1)
+            raise Exception('Intercepting Exception')
+            time.sleep(0.1)
+            profiler.stop()
+        self.assertEqual(len(log.handlers[0].get_log_events()), 0)
 
     def test_no_query_execution_context(self):
         with profiling.Profiler('profiler1'):
@@ -440,8 +458,8 @@ class ProfileDecoratorTest(unittest.TestCase):
         with self.assertRaises(Exception):
             testing_decorated_function()
         self.assertEqual(len(log.handlers[0].get_log_events()), 2)
-        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
-        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^testing_decorated_function: Exception "<type \'exceptions.Exception\'>" with value "Exception in decorated function" intercepted while profiling$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function: Exception "<type \'exceptions.Exception\'>" with value "Exception in decorated function" intercepted while profiling$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
 
     def test_decorator_exception_interception_in_method(self):
         class TestingClass(object):
@@ -454,8 +472,8 @@ class ProfileDecoratorTest(unittest.TestCase):
             instance = TestingClass()
             instance.testing_decorated_method()
         self.assertEqual(len(log.handlers[0].get_log_events()), 2)
-        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^TestingClass.testing_decorated_method took: [0-9\.]+ ms$')
-        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^TestingClass.testing_decorated_method: Exception "<type \'exceptions.Exception\'>" with value "Exception in decorated method" intercepted while profiling$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^TestingClass.testing_decorated_method: Exception "<type \'exceptions.Exception\'>" with value "Exception in decorated method" intercepted while profiling$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^TestingClass.testing_decorated_method took: [0-9\.]+ ms$')
 
     def test_decorator_decorating_function(self):
         @profiling.profile
@@ -512,6 +530,13 @@ class ProfilehookDecoratorTest(unittest.TestCase):
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
         self.assertRegexpMatches(sys.stdout.getvalue(), r'\*\*\* PROFILER RESULTS \*\*\*')
 
+    def test_decorator_wrapper(self):
+        def testing_decorated_function():
+            return True
+        result = profiling.profilehook(testing_decorated_function)
+        self.assertIsInstance(result, types.FunctionType)
+
+
     def test_decorator_query_execution(self):
         @profiling.profilehook
         def testing_decorated_function():
@@ -559,8 +584,8 @@ class ProfilehookDecoratorTest(unittest.TestCase):
         with self.assertRaises(Exception):
             testing_decorated_function()
         self.assertEqual(len(log.handlers[0].get_log_events()), 2)
-        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
-        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^testing_decorated_function: Exception "<type \'exceptions.Exception\'>" with value "Exception in decorated function" intercepted while profiling$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function: Exception "<type \'exceptions.Exception\'>" with value "Exception in decorated function" intercepted while profiling$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
         self.assertRegexpMatches(sys.stdout.getvalue(), r'\*\*\* PROFILER RESULTS \*\*\*')
 
     def test_decorator_exception_interception_in_method(self):
@@ -574,8 +599,8 @@ class ProfilehookDecoratorTest(unittest.TestCase):
             instance = TestingClass()
             instance.testing_decorated_method()
         self.assertEqual(len(log.handlers[0].get_log_events()), 2)
-        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^TestingClass.testing_decorated_method took: [0-9\.]+ ms$')
-        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^TestingClass.testing_decorated_method: Exception "<type \'exceptions.Exception\'>" with value "Exception in decorated method" intercepted while profiling$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^TestingClass.testing_decorated_method: Exception "<type \'exceptions.Exception\'>" with value "Exception in decorated method" intercepted while profiling$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^TestingClass.testing_decorated_method took: [0-9\.]+ ms$')
         self.assertRegexpMatches(sys.stdout.getvalue(), r'\*\*\* PROFILER RESULTS \*\*\*')
 
     def test_decorator_decorating_function(self):
