@@ -21,6 +21,9 @@ Requirements
 
 For more information see *debian_requirements.txt* and *requirements.txt* files.
 
+**Important:** *profilehooks*, *python-profiler* are not required to be installed. Without installing them
+you won't be able to use `@profilehook` decorator.
+
 
 Installation
 -----------
