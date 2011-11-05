@@ -2,7 +2,8 @@ import logging
 import profiling
 import unittest
 import time
-
+from StringIO import StringIO
+import sys
 
 log = logging.getLogger(profiling.__name__)
 log.setLevel(logging.DEBUG)
@@ -474,11 +475,49 @@ class ProfileDecoratorTest(unittest.TestCase):
         self.assertEqual(len(log.handlers[0].get_log_events()), 1)
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^TestingClass.testing_decorated_method took: [0-9\.]+ ms$')
 
-        
+
+class ProfilehookDecoratorTest(unittest.TestCase):
+
+    CONNECTION_CLASS = None
+
+    @classmethod
+    def setUpClass(cls):
+        class Connection(object): pass
+        ProfilehookDecoratorTest.CONNECTION_CLASS = Connection
+
+    @classmethod
+    def tearDownClass(cls):
+        ProfilehookDecoratorTest.CONNECTION_CLASS = None
+
+    def setUp(self):
+        self.handler = TestLoggingHandler()
+        log.handlers = [self.handler]
+        self.old_stdout = sys.stdout
+        sys.stdout = StringIO()
+
+    def tearDown(self):
+        log.handlers = filter(lambda h: h is self.handler, log.handlers)
+        self.handler = None
+        if hasattr(profiling, 'connection'):
+            del profiling.connection
+        sys.stdout.close()
+        sys.stdout = self.old_stdout
+
+    def test_decorator(self):
+        @profiling.profilehook
+        def testing_decorated_function():
+            return True
+        testing_decorated_function()
+        self.assertEqual(len(log.handlers[0].get_log_events()), 1)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
+        self.assertRegexpMatches(sys.stdout.getvalue(), r'\*\*\* PROFILER RESULTS \*\*\*')
+
+
 if __name__ == "__main__":
     loader = unittest.TestLoader()
     suite  = unittest.TestSuite()
     suite.addTest(loader.loadTestsFromTestCase(ProfilerTest))
     suite.addTest(loader.loadTestsFromTestCase(ProfilerLoggingTest))
     suite.addTest(loader.loadTestsFromTestCase(ProfileDecoratorTest))
+    suite.addTest(loader.loadTestsFromTestCase(ProfilehookDecoratorTest))
     unittest.TextTestRunner(verbosity=2).run(suite)

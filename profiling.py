@@ -89,7 +89,7 @@ def profilehook(func):
         inner_wrapper.__module__ = func.__module__
         return inner_wrapper
 
-    w = wrapper(hook_profile(fn=func, immediate=False))
+    w = wrapper(hook_profile(fn=func, immediate=True))
     w.__doc__ = func.__doc__
     w.__name__ = func.__name__
     w.__dict__ = func.__dict__
