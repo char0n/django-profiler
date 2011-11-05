@@ -5,3 +5,5 @@
 .idea
 pip-log.txt*
 *.swn
+/django_profiler.egg-info/
+/dist/

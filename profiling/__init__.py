@@ -12,7 +12,7 @@ class Profiler(object):
     """
     Util for profiling python code mainly in django projects,
     but can be used also on ordinary python code
-    
+
     """
     def __init__(self, name, start=False):
         """Constructor

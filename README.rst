@@ -1,8 +1,9 @@
 django-profiler
 ===============
 
-django-profiler is util for profiling python code mainly in django projects,
-but can be used also on ordinary python code. It logs its output via standard
+django-profiler is util for profiling python code mainly in django projects
+but can be used also on ordinary python code. It counts sql queries a measures
+time of code execution. It logs its output via standard
 python logging library and uses logger `profiling`. If your profiler name
 doesn't contain any empty spaces e.g. Profiler('Profiler1') django-profiler will
 log all the output to the `profiling.Profiler` logger.
@@ -140,6 +141,7 @@ Tests
 To run the test run command: ::
 
  $ python test.py
+ $ python setup.py test
 
 
 Author
