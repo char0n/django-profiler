@@ -3,37 +3,127 @@ django-profiler
 
 django-profiler is util for profiling python code mainly in django projects,
 but can be used also on ordinary python code. It logs its output via standard
-python logging library and uses logger ``profiling``. If your profiler name
+python logging library and uses logger `profiling`. If your profiler name
 doesn't contain any empty spaces e.g. Profiler('Profiler1') django-profiler will
-log all the output to the ``profiling.Profiler`` logger. If you're using ``@profilehook``
-decorator, output is either being logged and outputted to ``sys.stdout``.
+log all the output to the `profiling.Profiler` logger.
+`@profilehook` decorator uses `profilehooks` python package to gather
+code execution stats. Except it logs via standard python logging it also
+outputs code execution stats directly to `sys.stdout`.
 
 
 Requirements
 ------------
 
 - python 2.7+
-- ``profilehooks`` python package
-- ``python-profiler`` linux package
+- *profilehooks* python package
+- *python-profiler* linux package
 
-For more information see ``debian_requirements.txt`` and ``requirements.txt`` files
+For more information see *debian_requirements.txt* and *requirements.txt* files.
 
 
 Installation
 -----------
 
-Install via ``pip` or copy this module into your project or into your PYTHON_PATH.
+Install via *pip* or copy this module into your project or into your PYTHON_PATH.
 
 
 Example
 -------
 
 **Example 1**
+
+Using context manager approach. Output will be logged to *profiling* logger.
+
 ::
 
  from profiling import Profiler
  with Profiler('Complex Computation'):
      # code with some complex computations
+
+**Example 2**
+
+Using context manager approach. Output will be logged to *profiling.Computation* logger.
+
+::
+
+ from profiling import Profiler
+ with Profiler('Computation'):
+     # code with some complex computations
+
+**Example 3**
+
+Using standard approach. Output will be logged to *profiling* logger.
+
+::
+
+ from profiling import Profiler
+ profiler =  Profiler('Complex Computation')
+ profiler.start()
+ # code with some complex computations
+ profiler.stop()
+
+**Example 4**
+
+Using standard approach and starting directly in constructor. Output will be logged to *profiling* logger.
+
+::
+
+ from profiling import Profiler
+ profiler =  Profiler('Complex Computation', start=True)
+ # code with some complex computations
+ profiler.stop()
+
+**Example 5**
+
+Using decorator approach. Output will be logged to *profiling.complex_computations* logger.
+
+::
+
+ from profiling import profile
+
+ @profile
+ def complex_computations():
+     #some complex computations
+
+**Example 6**
+
+Using decorator approach. Output will be logged to *profiling.ComplexClass.complex_computations* logger.
+
+::
+
+ from profiling import profile
+
+ class ComplexClass(object):
+     @profile
+     def complex_computations():
+         #some complex computations
+
+**Example 7**
+
+Using decorator approach. Output will be logged to *profiling.complex_computations* logger.
+`profilehooks` stats are outputted directly into `sys.stdout`.
+
+::
+
+ from profiling import profilehook
+
+ @profilehook
+ def complex_computations():
+     #some complex computations
+
+**Example 8**
+
+Using decorator approach. Output will be logged to *profiling.ComplexClass.complex_computations* logger.
+`profilehooks` stats are outputted directly into `sys.stdout`.
+
+::
+
+ from profiling import profilehook
+
+ class ComplexClass(object)
+    @profilehook
+    def complex_computations():
+        #some complex computations
 
 
 Tests
