@@ -178,6 +178,17 @@ class TestLoggingHandler(logging.Handler):
 
 class ProfilerLoggingTest(unittest.TestCase):
 
+    CONNECTION_CLASS = None
+
+    @classmethod
+    def setUpClass(cls):
+        class Connection(object): pass
+        ProfilerLoggingTest.CONNECTION_CLASS = Connection
+
+    @classmethod
+    def tearDownClass(cls):
+        ProfilerLoggingTest.CONNECTION_CLASS = None
+
     def setUp(self):
         self.handler = TestLoggingHandler()
         log.handlers = [self.handler]
@@ -185,6 +196,8 @@ class ProfilerLoggingTest(unittest.TestCase):
     def tearDown(self):
         log.handlers = filter(lambda h: h is self.handler, log.handlers)
         self.handler = None
+        if hasattr(profiling, 'connection'):
+            del profiling.connection
 
     def test_logging_context(self):
         with profiling.Profiler('profiler1'):
@@ -261,13 +274,19 @@ class ProfilerLoggingTest(unittest.TestCase):
         profiler.stop()
         self.assertEqual(log.handlers[0].get_log_events()[0].name, '%s.%s' % (profiling.__name__, 'Class.method'))
 
+    def test_exception_interception_context(self):
+        pass
+
+    def test_exception_interception_no_context(self):
+        pass
+
     def test_no_query_execution_context(self):
         with profiling.Profiler('profiler1'):
             pass
         self.assertEqual(len(log.handlers[0].get_log_events()), 1)
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^profiler1 took: [0-9\.]+ ms$')
 
-    def test_no_1query_execution_no_context(self):
+    def test_no_query_execution_no_context(self):
         profiler = profiling.Profiler('profiler1')
         profiler.start()
         profiler.stop()
@@ -275,8 +294,7 @@ class ProfilerLoggingTest(unittest.TestCase):
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^profiler1 took: [0-9\.]+ ms$')
 
     def test_query_execution_context(self):
-        class Connection(object): pass
-        connection = Connection()
+        connection = self.CONNECTION_CLASS()
         connection.queries = []
         profiling.connection = connection
         with profiling.Profiler('profiler1'):
@@ -290,8 +308,7 @@ class ProfilerLoggingTest(unittest.TestCase):
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^profiler1 took: [0-9\.]+ ms, executed 2 queries in 0.300000 seconds$')
 
     def test_query_execution_no_context(self):
-        class Connection(object): pass
-        connection = Connection()
+        connection = self.CONNECTION_CLASS()
         connection.queries = []
         profiling.connection = connection
         profiler = profiling.Profiler('profiler1')
@@ -306,15 +323,14 @@ class ProfilerLoggingTest(unittest.TestCase):
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^profiler1 took: [0-9\.]+ ms, executed 2 queries in 0.300000 seconds$')
 
     def test_query_execution_pre_queries_context(self):
-        class Connection(object): pass
-        connection = Connection()
+        connection = self.CONNECTION_CLASS()
         connection.queries = [
             { 'time': 0.1 },
             { 'time': 0.2 }
         ]
         profiling.connection = connection
         with profiling.Profiler('profiler1'):
-            connection = Connection()
+            connection = self.CONNECTION_CLASS()
             connection.queries = [
                 { 'time': 0.1 },
                 { 'time': 0.2 },
@@ -326,8 +342,7 @@ class ProfilerLoggingTest(unittest.TestCase):
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^profiler1 took: [0-9\.]+ ms, executed 2 queries in 0.700000 seconds$')
 
     def test_query_execution_pre_queries_no_context(self):
-        class Connection(object): pass
-        connection = Connection()
+        connection = self.CONNECTION_CLASS()
         connection.queries = [
             { 'time': 0.1 },
             { 'time': 0.2 }
@@ -335,7 +350,7 @@ class ProfilerLoggingTest(unittest.TestCase):
         profiling.connection = connection
         profiler = profiling.Profiler('profiler1')
         profiler.start()
-        connection = Connection()
+        connection = self.CONNECTION_CLASS()
         connection.queries = [
             { 'time': 0.1 },
             { 'time': 0.2 },
@@ -347,25 +362,123 @@ class ProfilerLoggingTest(unittest.TestCase):
         self.assertEqual(len(log.handlers[0].get_log_events()), 1)
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^profiler1 took: [0-9\.]+ ms, executed 2 queries in 0.700000 seconds$')
 
-class DecoratorTest(unittest.TestCase):
+        
+class ProfileDecoratorTest(unittest.TestCase):
 
-    def test_decorator_no_params(self):
+    CONNECTION_CLASS = None
+
+    @classmethod
+    def setUpClass(cls):
+        class Connection(object): pass
+        ProfileDecoratorTest.CONNECTION_CLASS = Connection
+
+    @classmethod
+    def tearDownClass(cls):
+        ProfileDecoratorTest.CONNECTION_CLASS = None
+
+    def setUp(self):
+        self.handler = TestLoggingHandler()
+        log.handlers = [self.handler]
+
+    def tearDown(self):
+        log.handlers = filter(lambda h: h is self.handler, log.handlers)
+        self.handler = None
+        if hasattr(profiling, 'connection'):
+            del profiling.connection
+
+    def test_decorator(self):
         @profiling.profile
         def testing_decorated_function():
             return True
         testing_decorated_function()
-        testing_decorated_function()
-        testing_decorated_function()
-        testing_decorated_function()
-        testing_decorated_function()
-        testing_decorated_function()
-        testing_decorated_function()
-        testing_decorated_function()
+        self.assertEqual(len(log.handlers[0].get_log_events()), 1)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
 
+    def test_decorator_query_execution(self):
+        @profiling.profile
+        def testing_decorated_function():
+            connection = self.CONNECTION_CLASS()
+            connection.queries = [
+                { 'time': 0.1 },
+                { 'time': 0.2 }
+            ]
+            profiling.connection = connection
+            return True
+        testing_decorated_function()
+        self.assertEqual(len(log.handlers[0].get_log_events()), 1)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms, executed 2 queries in 0.300000 seconds$')
+
+    def test_decorator_query_execution_pre_queries(self):
+        connection = self.CONNECTION_CLASS()
+        connection.queries = [
+            { 'time': 0.1 },
+            { 'time': 0.2 }
+        ]
+        profiling.connection = connection
+        @profiling.profile
+        def testing_decorated_function():
+            connection = self.CONNECTION_CLASS()
+            connection.queries = [
+                { 'time': 0.1 },
+                { 'time': 0.2 },
+                { 'time': 0.3 },
+                { 'time': 0.4 }
+            ]
+            profiling.connection = connection
+            return True
+        testing_decorated_function()
+        self.assertEqual(len(log.handlers[0].get_log_events()), 1)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms, executed 2 queries in 0.700000 seconds$')
+
+    def test_decorator_exception_interception_in_function(self):
+        @profiling.profile
+        def testing_decorated_function():
+            time.sleep(0.1)
+            raise Exception('Exception in decorated function')
+            return True
+        with self.assertRaises(Exception):
+            testing_decorated_function()
+        self.assertEqual(len(log.handlers[0].get_log_events()), 2)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^testing_decorated_function: Exception "<type \'exceptions.Exception\'>" with value "Exception in decorated function" intercepted while profiling$')
+
+    def test_decorator_exception_interception_in_method(self):
+        class TestingClass(object):
+            @profiling.profile
+            def testing_decorated_method(self):
+                time.sleep(0.1)
+                raise Exception('Exception in decorated method')
+                return True
+        with self.assertRaises(Exception):
+            instance = TestingClass()
+            instance.testing_decorated_method()
+        self.assertEqual(len(log.handlers[0].get_log_events()), 2)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^TestingClass.testing_decorated_method took: [0-9\.]+ ms$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^TestingClass.testing_decorated_method: Exception "<type \'exceptions.Exception\'>" with value "Exception in decorated method" intercepted while profiling$')
+
+    def test_decorator_decorating_function(self):
+        @profiling.profile
+        def testing_decorated_function():
+            return True
+        testing_decorated_function()
+        self.assertEqual(len(log.handlers[0].get_log_events()), 1)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
+
+    def test_decorator_decorating_class(self):
+        class TestingClass(object):
+            @profiling.profile
+            def testing_decorated_method(self):
+                return True
+        instance = TestingClass()
+        instance.testing_decorated_method()
+        self.assertEqual(len(log.handlers[0].get_log_events()), 1)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^TestingClass.testing_decorated_method took: [0-9\.]+ ms$')
+
+        
 if __name__ == "__main__":
     loader = unittest.TestLoader()
     suite  = unittest.TestSuite()
     suite.addTest(loader.loadTestsFromTestCase(ProfilerTest))
     suite.addTest(loader.loadTestsFromTestCase(ProfilerLoggingTest))
-    suite.addTest(loader.loadTestsFromTestCase(DecoratorTest))
+    suite.addTest(loader.loadTestsFromTestCase(ProfileDecoratorTest))
     unittest.TextTestRunner(verbosity=2).run(suite)
