@@ -27,8 +27,8 @@ Installation
 Install via *pip* or copy this module into your project or into your PYTHON_PATH.
 
 
-Example
--------
+Examples
+--------
 
 **Example 1**
 
