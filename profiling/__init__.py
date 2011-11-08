@@ -108,7 +108,7 @@ class Profiler(object):
             if globals().has_key('connection') and globals().has_key('settings') \
                and hasattr(settings, 'PROFILING_SQL_QUERIES') and settings.PROFILING_SQL_QUERIES and sql_count > 0:
                 for query in connection.queries[self.pre_queries_cnt:]:
-                    self.log.info(query)
+                    self.log.info('%s - %s', query.get('time'), query.get('sql'))
         else:
             self.log.info('%s took: %f ms', self.name, self.get_duration_milliseconds())
 
