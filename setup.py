@@ -21,7 +21,6 @@ setup(
     url='http://www.codescale.net/en/community#django-profiler',
     license='BSD',
     keywords = "django profiler profiling code profile",
-    install_requires=['profilehooks'],
     packages=['profiling'],
     test_suite='test'
 )

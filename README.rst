@@ -16,13 +16,17 @@ Requirements
 ------------
 
 - python 2.7+
-- *profilehooks* python package
-- *python-profiler* linux package
 
 For more information see *debian_requirements.txt* and *requirements.txt* files.
 
-**Important:** *profilehooks*, *python-profiler* are not required to be installed. Without installing them
-you won't be able to use `@profilehook` decorator.
+**Important notice**
+
+Due to packaging problem of *python-profiler* linux package on newest linux distributions,
+*profilehooks* in not an integral part of django-profiler package.
+*profilehooks* and *python-profiler* are not required to be installed. Without installing them
+you won't be able to use `@profilehook` decorator, but you will be able to use django-profiler
+and it's decorator nevertheless. To use *profilehooks* package you must install *profilehooks*
+python package and *python-profiler* linux package manually.
 
 
 Installation
