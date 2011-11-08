@@ -23,7 +23,7 @@ class Profiler(object):
     but can be used also on ordinary python code
 
     """
-    def __init__(self, name, start=False):
+    def __init__(self, name, start=False, profile_sql=False):
         """Constructor
 
         :param name: name of the Profiler instance
@@ -42,6 +42,7 @@ class Profiler(object):
         self.log = logging.getLogger(logger_name)
         self.name = name
         self.pre_queries_cnt = 0
+        self.profile_sql = profile_sql
         if start:
             self.start()
 
@@ -105,8 +106,9 @@ class Profiler(object):
                 self.name, self.get_duration_milliseconds(),
                 sql_count, sql_time
             )
-            if globals().has_key('connection') and globals().has_key('settings') \
-               and hasattr(settings, 'PROFILING_SQL_QUERIES') and settings.PROFILING_SQL_QUERIES and sql_count > 0:
+            if (globals().has_key('connection') and globals().has_key('settings') \
+               and hasattr(settings, 'PROFILING_SQL_QUERIES') and settings.PROFILING_SQL_QUERIES and sql_count > 0) \
+               or self.profile_sql:
                 for query in connection.queries[self.pre_queries_cnt:]:
                     self.log.info('%s - %s', query.get('time'), query.get('sql'))
         else:

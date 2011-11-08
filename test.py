@@ -397,7 +397,7 @@ class ProfilerLoggingTest(unittest.TestCase):
         self.assertEqual(len(log.handlers[0].get_log_events()), 1)
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^profiler1 took: [0-9\.]+ ms, executed 2 queries in 0.700000 seconds$')
 
-    def test_profiling_sql_queries(self):
+    def test_profiling_sql_queries_setting_constant(self):
         class Settings(object): pass
         settings = Settings()
         settings.PROFILING_SQL_QUERIES = True
@@ -422,7 +422,7 @@ class ProfilerLoggingTest(unittest.TestCase):
         self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^0\.3 \- SELECT \* FROM test_table3$')
         self.assertRegexpMatches(log.handlers[0].get_log_events()[2].getMessage(), r'^0\.4 \- SELECT \* FROM test_table4$')
 
-    def test_not_profiling_sql_queries(self):
+    def test_not_profiling_sql_queries_setting_constant(self):
         class Settings(object): pass
         settings = Settings()
         settings.PROFILING_SQL_QUERIES = False
@@ -444,6 +444,30 @@ class ProfilerLoggingTest(unittest.TestCase):
             profiling.connection = connection
         self.assertEqual(len(log.handlers[0].get_log_events()), 1)
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^profiler1 took: [0-9\.]+ ms, executed 2 queries in 0.700000 seconds$')
+
+    def test_profiling_sql_queries_constructor(self):
+        with profiling.Profiler('profiler1', profile_sql=True):
+            connection = self.CONNECTION_CLASS()
+            connection.queries = [
+                { 'time': 0.1, 'sql': 'SELECT * FROM test_table1' },
+                { 'time': 0.2, 'sql': 'SELECT * FROM test_table2' }
+            ]
+            profiling.connection = connection
+        self.assertEqual(len(log.handlers[0].get_log_events()), 3)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^profiler1 took: [0-9\.]+ ms, executed 2 queries in 0.300000 seconds$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^0\.1 \- SELECT \* FROM test_table1$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[2].getMessage(), r'^0\.2 \- SELECT \* FROM test_table2$')
+
+    def test_not_profiling_sql_queries_constructor(self):
+        with profiling.Profiler('profiler1'):
+            connection = self.CONNECTION_CLASS()
+            connection.queries = [
+                { 'time': 0.1, 'sql': 'SELECT * FROM test_table1' },
+                { 'time': 0.2, 'sql': 'SELECT * FROM test_table2' }
+            ]
+            profiling.connection = connection
+        self.assertEqual(len(log.handlers[0].get_log_events()), 1)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^profiler1 took: [0-9\.]+ ms, executed 2 queries in 0.300000 seconds$')
 
         
 class ProfileDecoratorTest(unittest.TestCase):
