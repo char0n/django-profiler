@@ -35,6 +35,23 @@ Installation
 Install via *pip* or copy this module into your project or into your PYTHON_PATH.
 
 
+Configuration
+-------------
+
+**settings.py constants**
+
+::
+
+ PROFILING_LOGGER_NAME
+ PROFILING_SQL_QUERIES
+
+It is possible to change default django-profiler logger name by defining
+PROFILING_LOGGER_NAME = 'logger_name' in your django *settings.py*.
+
+To log also sql queries into profiler logger set PROFILING_SQL_QUERIES to True
+in your django *settings.py* module.
+
+
 Examples
 --------
 

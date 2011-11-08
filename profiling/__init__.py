@@ -2,14 +2,20 @@ import logging
 from time import time
 try:
     from profilehooks import profile as hook_profile
-except Exception:
+except ImportError:
     pass
 try:
     from django.db import connection
-except Exception:
+except ImportError:
+    pass
+try:
+    from django.conf import settings
+except ImportError:
     pass
 
-__version__ = '1.0b'
+
+__version__ = '1.0b2'
+
 
 class Profiler(object):
     """
@@ -27,7 +33,10 @@ class Profiler(object):
         :rtype: Profiler
 
         """
-        logger_name = __name__
+        if globals().has_key('settings') and hasattr(settings, 'PROFILING_LOGGER_NAME'):
+            logger_name = settings.PROFILING_LOGGER_NAME
+        else:
+            logger_name = __name__
         if name.find(' ') == -1:
             logger_name += '.%s' % name
         self.log = logging.getLogger(logger_name)
@@ -96,6 +105,10 @@ class Profiler(object):
                 self.name, self.get_duration_milliseconds(),
                 sql_count, sql_time
             )
+            if globals().has_key('connection') and globals().has_key('settings') \
+               and hasattr(settings, 'PROFILING_SQL_QUERIES') and settings.PROFILING_SQL_QUERIES and sql_count > 0:
+                for query in connection.queries[self.pre_queries_cnt:]:
+                    self.log.info(query)
         else:
             self.log.info('%s took: %f ms', self.name, self.get_duration_milliseconds())
 
