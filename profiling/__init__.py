@@ -1,4 +1,6 @@
 import logging
+import functools
+import inspect
 from time import time
 try:
     from profilehooks import profile as hook_profile
@@ -160,26 +162,34 @@ if globals().has_key('hook_profile'):
         return w
     
 
-def profile(func):
+def profile(*fn, **options):
     """Decorator for profiling functions and class methods.
 
-    :param func: decorated function object (bound or unbound)
-    :type func: types.FunctionType
     :returns: wrapped function object
     :rtype: types.FunctionType
 
     """
-    def wrapper(*args, **kwargs):
-        if args and hasattr(args[0], '__class__') and args[0].__class__.__dict__.get(func.__name__) is not None \
-            and args[0].__class__.__dict__.get(func.__name__).__name__ == func.__name__:
-            profiler_name = '%s.%s' % (args[0].__class__.__name__, func.__name__)
-        else:
-            profiler_name = func.__name__
-        with Profiler(profiler_name):
-            to_return = func(*args, **kwargs)
-        return to_return
-    wrapper.__doc__ = func.__doc__
-    wrapper.__name__ = func.__name__
-    wrapper.__dict__ = func.__dict__
-    wrapper.__module__ = func.__module__
-    return wrapper
+    profile_sql = options.pop('profile_sql', False)
+    if options:
+        raise TypeError('Unsupported keyword arguments: %s' % ','.join(options.keys()))
+
+    def decorator(func):
+        functools.update_wrapper(decorator, func)
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if args and hasattr(args[0], '__class__') and args[0].__class__.__dict__.get(func.__name__) is not None \
+                and args[0].__class__.__dict__.get(func.__name__).__name__ == func.__name__:
+                profiler_name = '%s.%s' % (args[0].__class__.__name__, func.__name__)
+            else:
+                profiler_name = func.__name__
+            with Profiler(profiler_name, profile_sql=profile_sql):
+                to_return = func(*args, **kwargs)
+            return to_return
+        return functools.update_wrapper(wrapper, func)
+    
+    if fn and inspect.isfunction(fn[0]):
+        # Called with no parameter
+        return decorator(fn[0])
+    else:
+        # Called with a parameter
+        return decorator

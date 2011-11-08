@@ -498,8 +498,24 @@ class ProfileDecoratorTest(unittest.TestCase):
         def testing_decorated_function():
             return True
         testing_decorated_function()
+        self.assertEqual(testing_decorated_function.__name__, 'testing_decorated_function')
         self.assertEqual(len(log.handlers[0].get_log_events()), 1)
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
+
+    def test_decorator_param(self):
+        @profiling.profile(profile_sql=True)
+        def testing_decorated_function():
+            return True
+        testing_decorated_function()
+        self.assertEqual(testing_decorated_function.__name__, 'testing_decorated_function')
+        self.assertEqual(len(log.handlers[0].get_log_events()), 1)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
+
+    def test_decorator_invalid_param(self):
+        with self.assertRaises(TypeError):
+            @profiling.profile(invalid_param=True)
+            def testing_decorated_function():
+                return True
 
     def test_decorator_query_execution(self):
         @profiling.profile
@@ -581,6 +597,22 @@ class ProfileDecoratorTest(unittest.TestCase):
         self.assertEqual(len(log.handlers[0].get_log_events()), 1)
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^TestingClass.testing_decorated_method took: [0-9\.]+ ms$')
 
+    def test_decorator_profile_sql(self):
+        @profiling.profile(profile_sql=True)
+        def testing_decorated_function():
+            connection = self.CONNECTION_CLASS()
+            connection.queries = [
+                { 'time': 0.1, 'sql': 'SELECT * FROM test_table1' },
+                { 'time': 0.2, 'sql': 'SELECT * FROM test_table2' },
+            ]
+            profiling.connection = connection
+            return True
+        testing_decorated_function()
+        self.assertEqual(len(log.handlers[0].get_log_events()), 3)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms, executed 2 queries in 0.300000 seconds$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^0\.1 \- SELECT \* FROM test_table1$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[2].getMessage(), r'^0\.2 \- SELECT \* FROM test_table2$')
+        
 
 if hasattr(profiling, 'profilehook'):
     class ProfilehookDecoratorTest(unittest.TestCase):
