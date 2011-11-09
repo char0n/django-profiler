@@ -112,7 +112,7 @@ class Profiler(object):
                and hasattr(settings, 'PROFILING_SQL_QUERIES') and settings.PROFILING_SQL_QUERIES and sql_count > 0) \
                or self.profile_sql:
                 for query in connection.queries[self.pre_queries_cnt:]:
-                    self.log.info('%s - %s', query.get('time'), query.get('sql'))
+                    self.log.info('(%s) %s', query.get('time'), query.get('sql'))
         else:
             self.log.info('%s took: %f ms', self.name, self.get_duration_milliseconds())
 
