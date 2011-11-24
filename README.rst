@@ -30,7 +30,7 @@ python package and *python-profiler* linux package manually.
 
 
 Installation
------------
+------------
 
 Install via *pip* or copy this module into your project or into your PYTHON_PATH.
 
