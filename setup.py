@@ -25,17 +25,17 @@ setup(
     packages=['profiling'],
     platforms='any',
     classifiers=[
-        'Development Status :: 1.0 - Beta',
+        'Development Status :: Development Status :: 4 - Beta',
         'Environment :: Console',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
-        'License :: New BSD :: The New BSD License',
+        'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Topic :: Utilities',
-        'Topic :: Debugging',
-        'Topic :: Software Development :: Bug Tracking',
+        'Topic :: Software Development :: Debuggers',
+        'Topic :: Software Development :: Bug Tracking'
     ],
     test_suite='test'
 )
