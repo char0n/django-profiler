@@ -25,7 +25,7 @@ setup(
     packages=['profiling'],
     platforms='any',
     classifiers=[
-        'Development Status :: 1.0 - Beta 3',
+        'Development Status :: 1.0 - Beta',
         'Environment :: Console',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
