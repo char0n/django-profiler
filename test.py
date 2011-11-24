@@ -1,4 +1,5 @@
 import logging
+import functools
 import profiling
 import unittest
 import time
@@ -612,7 +613,79 @@ class ProfileDecoratorTest(unittest.TestCase):
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms, executed 2 queries in 0.300000 seconds$')
         self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^\(0\.1\) SELECT \* FROM test_table1$')
         self.assertRegexpMatches(log.handlers[0].get_log_events()[2].getMessage(), r'^\(0\.2\) SELECT \* FROM test_table2$')
-        
+
+    def test_decorator_on_decorated_function(self):
+        class memoized(object):
+           """Decorator that caches a function's return value each time it is called.
+           If called later with the same arguments, the cached value is returned, and
+           not re-evaluated.
+           """
+           def __init__(self, func):
+              self.func = func
+              self.cache = {}
+           def __call__(self, *args):
+              try:
+                 return self.cache[args]
+              except KeyError:
+                 value = self.func(*args)
+                 self.cache[args] = value
+                 return value
+              except TypeError:
+                 # uncachable -- for instance, passing a list as an argument.
+                 # Better to not cache than to blow up entirely.
+                 return self.func(*args)
+           def __repr__(self):
+              """Return the function's docstring."""
+              return self.func.__doc__
+           def __get__(self, obj, objtype):
+              """Support instance methods."""
+              return functools.partial(self.__call__, obj)
+
+        @memoized
+        @profiling.profile
+        def testing_decorated_function(arg1, arg2):
+            return arg1 + arg2
+        self.assertEqual(testing_decorated_function(1, 2), 3)
+        self.assertEqual(testing_decorated_function(1, 2), 3)
+        self.assertEqual(len(log.handlers[0].get_log_events()), 1)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
+
+    def test_decorator_on_decorator(self):
+        class memoized(object):
+           """Decorator that caches a function's return value each time it is called.
+           If called later with the same arguments, the cached value is returned, and
+           not re-evaluated.
+           """
+           def __init__(self, func):
+              self.func = func
+              self.cache = {}
+           def __call__(self, *args):
+              try:
+                 return self.cache[args]
+              except KeyError:
+                 value = self.func(*args)
+                 self.cache[args] = value
+                 return value
+              except TypeError:
+                 # uncachable -- for instance, passing a list as an argument.
+                 # Better to not cache than to blow up entirely.
+                 return self.func(*args)
+           def __repr__(self):
+              """Return the function's docstring."""
+              return self.func.__doc__
+           def __get__(self, obj, objtype):
+              """Support instance methods."""
+              return functools.partial(self.__call__, obj)
+
+        @profiling.profile()
+        @memoized
+        def testing_decorated_function(arg1, arg2):
+            return arg1 + arg2
+        self.assertEqual(testing_decorated_function(1, 2), 3)
+        self.assertEqual(testing_decorated_function(1, 2), 3)
+        self.assertEqual(len(log.handlers[0].get_log_events()), 2)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^memoized took: [0-9\.]+ ms$')
+
 
 if hasattr(profiling, 'profilehook'):
     class ProfilehookDecoratorTest(unittest.TestCase):

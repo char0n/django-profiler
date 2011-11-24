@@ -160,7 +160,7 @@ if globals().has_key('hook_profile'):
         w.__dict__ = func.__dict__
         w.__module__ = func.__module__
         return w
-    
+
 
 def profile(*fn, **options):
     """Decorator for profiling functions and class methods.
@@ -174,18 +174,37 @@ def profile(*fn, **options):
         raise TypeError('Unsupported keyword arguments: %s' % ','.join(options.keys()))
 
     def decorator(func):
-        functools.update_wrapper(decorator, func)
-        @functools.wraps(func)
+        try:
+            func.__name__
+        except AttributeError:
+            # This decorator is on top of another decorator implemented as class
+            func.__name__ = func.__class__.__name__
+        try:
+            functools.update_wrapper(decorator, func)
+        except AttributeError:
+            pass
         def wrapper(*args, **kwargs):
+            try:
+                functools.update_wrapper(wrapper, func)
+            except AttributeError:
+                pass
             if args and hasattr(args[0], '__class__') and args[0].__class__.__dict__.get(func.__name__) is not None \
                 and args[0].__class__.__dict__.get(func.__name__).__name__ == func.__name__:
                 profiler_name = '%s.%s' % (args[0].__class__.__name__, func.__name__)
             else:
-                profiler_name = func.__name__
+                if hasattr(func, '__name__'):
+                    profiler_name = func.__name__
+                elif hasattr(func, '__class__'):
+                    profiler_name = func.__class__.__name__
+                else:
+                    profiler_name = 'Profiler'
             with Profiler(profiler_name, profile_sql=profile_sql):
                 to_return = func(*args, **kwargs)
             return to_return
-        return functools.update_wrapper(wrapper, func)
+        try:
+            return functools.update_wrapper(wrapper, func)
+        except AttributeError:
+            return wrapper
     
     if fn and inspect.isfunction(fn[0]):
         # Called with no parameter
