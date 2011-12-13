@@ -37,5 +37,5 @@ setup(
         'Topic :: Software Development :: Debuggers',
         'Topic :: Software Development :: Bug Tracking'
     ],
-    test_suite='test'
+    test_suite='profiling.test'
 )
