@@ -22,7 +22,7 @@ setup(
     download_url='http://github.com/char0n/django-profiler/tarball/master',
     license='BSD',
     keywords = 'django profiler profiling code profile',
-    packages=['profiling'],
+    packages=['profiling', 'profiling.test'],
     platforms='any',
     classifiers=[
         'Development Status :: 4 - Beta',
