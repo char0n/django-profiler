@@ -16,7 +16,7 @@ setup(
     version=profiling.__version__,
     description='util for profiling python code mainly in django projects, but can be used also on ordinary python code',
     long_description=read('README.rst'),
-    author='Vladimír Gorej',
+    author=u'Vladimír Gorej',
     author_email='gorej@codescale.net',
     url='http://www.codescale.net/en/community#django-profiler',
     download_url='http://github.com/char0n/django-profiler/tarball/master',
