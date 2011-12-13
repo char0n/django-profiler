@@ -156,7 +156,7 @@ Tests
 
 **Tested on evnironment**
 
-- Xubuntu Linux 11.04 natty 64-bit
+- Xubuntu Linux 11.10 oneiric 64-bit
 - python 2.7.1+
 - python unittest
 
