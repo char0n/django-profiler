@@ -1,11 +1,11 @@
 import unittest
-from profiling.test import profile_decorator_test, profilehook_decorator_test, profiler_logging_test, profiler_test
+from profiling.test import test_profile_decorator, test_profilehook_decorator, test_profiler_logging, test_profiler
 
 if __name__ == "__main__":
     loader = unittest.TestLoader()
     suite  = unittest.TestSuite()
-    suite.addTests(loader.loadTestsFromModule(profile_decorator_test))
-    suite.addTests(loader.loadTestsFromModule(profilehook_decorator_test))
-    suite.addTests(loader.loadTestsFromModule(profiler_logging_test))
-    suite.addTests(loader.loadTestsFromModule(profiler_test))
+    suite.addTests(loader.loadTestsFromModule(test_profile_decorator))
+    suite.addTests(loader.loadTestsFromModule(test_profilehook_decorator))
+    suite.addTests(loader.loadTestsFromModule(test_profiler_logging))
+    suite.addTests(loader.loadTestsFromModule(test_profiler))
     unittest.TextTestRunner(verbosity=2).run(suite)
