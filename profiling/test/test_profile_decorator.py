@@ -1,8 +1,11 @@
-from profiling.test import TestLoggingHandler, log
 import functools
+import sys
 import profiling
 import unittest
 import time
+from StringIO import StringIO
+
+from profiling.test import TestLoggingHandler, log
 
 
 class ProfileDecoratorTest(unittest.TestCase):
@@ -25,8 +28,8 @@ class ProfileDecoratorTest(unittest.TestCase):
     def tearDown(self):
         log.handlers = filter(lambda h: h is self.handler, log.handlers)
         self.handler = None
-        if hasattr(profiling, 'connection'):
-            del profiling.connection
+        if profiling.connection is not None:
+            profiling.connection = None
 
     def test_decorator(self):
         @profiling.profile
@@ -148,6 +151,26 @@ class ProfileDecoratorTest(unittest.TestCase):
         self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'^\(0\.1\) SELECT \* FROM test_table1$')
         self.assertRegexpMatches(log.handlers[0].get_log_events()[2].getMessage(), r'^\(0\.2\) SELECT \* FROM test_table2$')
 
+    def test_decorator_stats(self):
+        @profiling.profile(stats=True)
+        def testing_decorated_function():
+            return True
+        testing_decorated_function()
+        self.assertEqual(len(log.handlers[0].get_log_events()), 2)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[1].getMessage(), r'\d+ function calls in [0-9\.]+ seconds')
+
+    def test_decorator_stats_to_file_like_object(self):
+        file_like_object = StringIO()
+        @profiling.profile(stats=True, stats_buffer=file_like_object)
+        def testing_decorated_function():
+            return True
+        testing_decorated_function()
+        self.assertEqual(len(log.handlers[0].get_log_events()), 1)
+        self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^testing_decorated_function took: [0-9\.]+ ms$')
+        self.assertRegexpMatches(file_like_object.getvalue(), r'\d+ function calls in [0-9\.]+ seconds')
+        file_like_object.close()
+
     def test_decorator_on_decorated_function(self):
         class memoized(object):
            """Decorator that caches a function's return value each time it is called.
@@ -219,3 +242,7 @@ class ProfileDecoratorTest(unittest.TestCase):
         self.assertEqual(testing_decorated_function(1, 2), 3)
         self.assertEqual(len(log.handlers[0].get_log_events()), 2)
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^memoized took: [0-9\.]+ ms$')
+
+
+if __name__ == '__main__':
+    unittest.main()

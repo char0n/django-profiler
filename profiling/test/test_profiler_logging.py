@@ -1,7 +1,9 @@
-from profiling.test import TestLoggingHandler, log
 import profiling
 import unittest
 import time
+
+from profiling.test import TestLoggingHandler, log
+
 
 class ProfilerLoggingTest(unittest.TestCase):
 
@@ -23,10 +25,10 @@ class ProfilerLoggingTest(unittest.TestCase):
     def tearDown(self):
         log.handlers = filter(lambda h: h is self.handler, log.handlers)
         self.handler = None
-        if hasattr(profiling, 'connection'):
-            del profiling.connection
-        if hasattr(profiling, 'settings'):
-            del profiling.settings
+        if profiling.connection is not None:
+            profiling.connection = None
+        if profiling.settings is not None:
+            profiling.settings = None
 
     def test_logging_context(self):
         with profiling.Profiler('profiler1'):
@@ -276,3 +278,7 @@ class ProfilerLoggingTest(unittest.TestCase):
             profiling.connection = connection
         self.assertEqual(len(log.handlers[0].get_log_events()), 1)
         self.assertRegexpMatches(log.handlers[0].get_log_events()[0].getMessage(), r'^profiler1 took: [0-9\.]+ ms, executed 2 queries in 0.300000 seconds$')
+
+
+if __name__ == '__main__':
+    unittest.main()

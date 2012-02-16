@@ -7,26 +7,12 @@ time of code execution. It logs its output via standard
 python logging library and uses logger `profiling`. If your profiler name
 doesn't contain any empty spaces e.g. Profiler('Profiler1') django-profiler will
 log all the output to the `profiling.Profiler` logger.
-`@profilehook` decorator uses `profilehooks` python package to gather
-code execution stats. Except it logs via standard python logging it also
-outputs code execution stats directly to `sys.stdout`.
 
 
 Requirements
 ------------
 
 - python 2.7+
-
-For more information see *debian_requirements.txt* and *requirements.txt* files.
-
-**Important notice**
-
-Due to packaging problem of *python-profiler* linux package on newest linux distributions,
-*profilehooks* in not an integral part of django-profiler package.
-*profilehooks* and *python-profiler* are not required to be installed. Without installing them
-you won't be able to use `@profilehook` decorator, but you will be able to use django-profiler
-and it's decorator nevertheless. To use *profilehooks* package you must install *profilehooks*
-python package and *python-profiler* linux package manually.
 
 
 Installation
@@ -38,7 +24,7 @@ Install via *pip* or copy this module into your project or into your PYTHON_PATH
 Configuration
 -------------
 
-**settings.py constants**
+**django settings.py constants**
 
 ::
 
@@ -126,27 +112,43 @@ Using decorator approach. Output will be logged to *profiling.ComplexClass.compl
 **Example 7**
 
 Using decorator approach. Output will be logged to *profiling.complex_computations* logger.
-`profilehooks` stats are outputted directly into `sys.stdout`.
+`profile` execution stats are logged to *profiling.complex_computations* logger.
 
 ::
 
- from profiling import profilehook
+ from profiling import profile
 
- @profilehook
+ @profile(stats=True)
  def complex_computations():
      #some complex computations
 
 **Example 8**
 
-Using decorator approach. Output will be logged to *profiling.ComplexClass.complex_computations* logger.
-`profilehooks` stats are outputted directly into `sys.stdout`.
+Using decorator approach. Output will be logged to *profiling.complex_computations* logger.
+`profile` execution stats are printed to sys.stdout.
 
 ::
 
- from profiling import profilehook
+ import sys
+
+ from profiling import profile
+
+ @profile(stats=True, stats_buffer=sys.stdout)
+ def complex_computations():
+     #some complex computations
+
+
+**Example 9**
+
+Using decorator approach. Output will be logged to *profiling.ComplexClass.complex_computations* logger.
+`profile` stats will be logged to *profiling.ComplexClass.complex_computations*.
+
+::
+
+ from profiling import profile
 
  class ComplexClass(object)
-    @profilehook
+    @profile(stats=True)
     def complex_computations():
         #some complex computations
 
@@ -157,7 +159,7 @@ Tests
 **Tested on evnironment**
 
 - Xubuntu Linux 11.10 oneiric 64-bit
-- python 2.7.1+
+- python 2.7.2+
 - python unittest
 
 **Running tests**
@@ -180,4 +182,5 @@ References
 ----------
 
 - http://github.com/char0n/django-profiler
+- http://pypi.python.org/pypi/django-profiler/
 - http://www.codescale.net/en/community#django-profiler

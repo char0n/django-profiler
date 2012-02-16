@@ -1,8 +1,9 @@
-from profiling.test import log
 import logging
 import profiling
 import unittest
 import time
+
+from profiling.test import log
 
 
 class ProfilerTest(unittest.TestCase):
@@ -112,12 +113,12 @@ class ProfilerTest(unittest.TestCase):
         self.assertGreaterEqual(profiler2.get_duration_microseconds(), 0.1 * 1000000)
 
     def test_profiler_no_start(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(RuntimeError):
             profiler1 = profiling.Profiler('profiler1')
             profiler1.stop()
 
     def test_profiler_start_in_constructor(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(RuntimeError):
             profiler1 = profiling.Profiler('profiler1')
             profiler1.stop()
         profiler1 = profiling.Profiler('profiler1', start=True)
@@ -163,7 +164,7 @@ class ProfilerTest(unittest.TestCase):
         with profiling.Profiler('profiler1') as profiler:
             pass
         self.assertEqual(profiler.log.name,'custom_logger_name.profiler1')
-        delattr(profiling, 'settings')
+        profiling.settings = None
         with profiling.Profiler('profiler1') as profiler:
             pass
         self.assertEqual(profiler.log.name, 'profiling.profiler1')
@@ -188,3 +189,7 @@ class TestLoggingHandler(logging.Handler):
     def get_log_events(self):
         """Getting shallow copy of log events container."""
         return self.logEvents[:]
+
+
+if __name__ == '__main__':
+    unittest.main()
