@@ -1,11 +1,11 @@
 
 __version__ = '1.1'
 
+import sys
+import timeit
+import inspect
 import logging
 import functools
-import inspect
-import sys
-from time import time
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -67,7 +67,7 @@ class Profiler(object):
         if hasattr(self, 'stop_time'):
             stop_time = self.stop_time
         else:
-            stop_time = time()
+            stop_time = timeit.default_timer()
         delta = stop_time - self.start_time
         return delta
 
@@ -94,7 +94,7 @@ class Profiler(object):
         Starting profiler mechanism. We strongly recommend not to use this
         method directly, but rather use Profiler as context manager.
         """
-        self.start_time = time()
+        self.start_time = timeit.default_timer()
         self.pre_queries_cnt = len(connection.queries) if connection is not None else 0
 
     def stop(self):
@@ -108,7 +108,7 @@ class Profiler(object):
         if not hasattr(self, 'start_time'):
             raise RuntimeError('Profiler(%s) was stopped before being started' % self.name)
 
-        self.stop_time = time()
+        self.stop_time = timeit.default_timer()
         if connection is not None:
             sql_count = len(connection.queries) - self.pre_queries_cnt
             if sql_count > 0:
