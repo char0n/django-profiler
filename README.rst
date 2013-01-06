@@ -181,6 +181,6 @@ Author
 References
 ----------
 
-- http://github.com/char0n/django-profiler
+- http://github.com/CodeScaleInc/django-profiler
 - http://pypi.python.org/pypi/django-profiler/
 - http://www.codescale.net/en/community#django-profiler
