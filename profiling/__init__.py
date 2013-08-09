@@ -176,7 +176,7 @@ def profile(*fn, **options):
                profiler_name = '%s.%s' % (args[0].__class__.__name__, func.__name__)
             else:
                 if hasattr(func, '__name__'):
-                    profiler_name = func.__name__
+                    profiler_name = '{0}.{1}'.format(func.__module__, func.__name__)
                 elif hasattr(func, '__class__'):
                     profiler_name = func.__class__.__name__
                 else:
