@@ -1,6 +1,3 @@
-__version__ = '1.1.3'
-
-import os
 import sys
 import timeit
 import inspect
@@ -16,10 +13,7 @@ except ImportError:
     import profile as profile_module
 
 try:
-    if 'DJANGO_SETTINGS_MODULE' in os.environ:
-        from django.conf import settings
-    else:
-        settings = None
+   from django.conf import settings
 except ImportError:
     settings = None
 

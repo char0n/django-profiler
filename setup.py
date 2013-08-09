@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup
-import profiling
 import os
 
 # Utility function to read the README file.
@@ -13,7 +12,7 @@ def read(fname):
 
 setup(
     name='django-profiler',
-    version=profiling.__version__,
+    version='1.1.4',
     description='util for profiling python code mainly in django projects, but can be used also on ordinary python code',
     long_description=read('README.rst'),
     author=u'Vladimír Gorej',
