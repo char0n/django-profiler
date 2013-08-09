@@ -1,5 +1,5 @@
 
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 import os
 import sys
@@ -16,16 +16,16 @@ try:
 except ImportError:
     import profile as profile_module
 
-# Django installed but there is no django configuration.
-if 'DJANGO_SETTINGS_MODULE' in os.environ:
-    try:
+try:
+    from django.conf import settings
+except ImportError:
+    settings = None
+
+try:
+    if settings is not None and settings.configured:
         from django.db import connection
-    except ImportError:
-        connection = None
-    try:
-        from django.conf import settings
-    except ImportError:
-        settings = None
+except ImportError:
+    connection = None
 
 
 class Profiler(object):
