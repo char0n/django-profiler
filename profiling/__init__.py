@@ -1,7 +1,6 @@
 
 __version__ = '1.1.2'
 
-import os
 import sys
 import timeit
 import inspect
@@ -22,9 +21,9 @@ except ImportError:
     settings = None
 
 try:
-    if settings is not None and settings.configured:
+    if settings.configured:
         from django.db import connection
-except ImportError:
+except (ImportError, AttributeError):
     connection = None
 
 
