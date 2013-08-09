@@ -1,6 +1,6 @@
-
 __version__ = '1.1.2'
 
+import os
 import sys
 import timeit
 import inspect
@@ -16,13 +16,18 @@ except ImportError:
     import profile as profile_module
 
 try:
-    from django.conf import settings
+    if 'DJANGO_SETTINGS_MODULE' in os.environ:
+        from django.conf import settings
+    else:
+        settings = None
 except ImportError:
     settings = None
 
 try:
     if settings.configured:
         from django.db import connection
+    else:
+        connection = None
 except (ImportError, AttributeError):
     connection = None
 
