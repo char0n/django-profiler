@@ -12,7 +12,7 @@ def read(fname):
 
 setup(
     name='django-profiler',
-    version='1.1.5',
+    version='2.0.0',
     description='util for profiling python code mainly in django projects, but can be used also on ordinary python code',
     long_description=read('README.rst'),
     author=u'Vladimír Gorej',
@@ -21,7 +21,7 @@ setup(
     download_url='http://github.com/char0n/django-profiler/tarball/master',
     license='BSD',
     keywords = 'django profiler profiling code profile',
-    packages=['profiling', 'profiling.test'],
+    packages=['profiling'],
     platforms='any',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -36,5 +36,5 @@ setup(
         'Topic :: Software Development :: Debuggers',
         'Topic :: Software Development :: Bug Tracking'
     ],
-    test_suite='profiling.test'
+    #test_suite=''
 )

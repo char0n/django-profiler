@@ -19,11 +19,11 @@ except ImportError:
 
 try:
     if settings.configured:
-        from django.db import connection
+        from django.db import connections
     else:
-        connection = None
+        connections = None
 except (ImportError, AttributeError):
-    connection = None
+    connections = None
 
 
 class Profiler(object):
@@ -31,8 +31,11 @@ class Profiler(object):
     Util for profiling python code mainly in django projects,
     but can be used also on ordinary python code
 
+    Warning:
+        Currently only one connection is supported.
+
     """
-    def __init__(self, name, start=False, profile_sql=False):
+    def __init__(self, name, start=False, profile_sql=False, connection_names=('default',)):
         """Constructor
 
         :param name: name of the Profiler instance
@@ -41,6 +44,8 @@ class Profiler(object):
         :type start: bool
         :param profile_sql: whether to profile sql queries or not
         :type profile_sql: bool
+        :param connection_names: names of database connections to profile
+        :type connection_names: tuple
         :returns: Profiler instance
         :rtype: profiling.Profiler
 
@@ -53,8 +58,13 @@ class Profiler(object):
             logger_name += '.{0}'.format(name)
         self.log = logging.getLogger(logger_name)
         self.name = name
-        self.pre_queries_cnt = 0
+        self.pre_queries_cnt = {}
         self.profile_sql = profile_sql
+        try:
+            assert isinstance(connection_names, tuple)
+            self.connection_names = connection_names
+        except AssertionError:
+            self.connection_names = 'default',
         if start:
             self.start()
 
@@ -96,7 +106,9 @@ class Profiler(object):
         method directly, but rather use Profiler as context manager.
         """
         self.start_time = timeit.default_timer()
-        self.pre_queries_cnt = len(connection.queries) if connection is not None else 0
+        if self.__can_profile_sql():
+            for connection_name in self.connection_names:
+                self.pre_queries_cnt[connection_name] = len(connections[connection_name].queries)
 
     def stop(self):
         """
@@ -110,20 +122,34 @@ class Profiler(object):
             raise RuntimeError('Profiler(%s) was stopped before being started' % self.name)
 
         self.stop_time = timeit.default_timer()
-        if connection is not None:
-            sql_count = len(connection.queries) - self.pre_queries_cnt
-            if sql_count > 0:
-                sql_time = sum([float(q['time']) for q in connection.queries[self.pre_queries_cnt:self.pre_queries_cnt + sql_count]])
-            else:
-                sql_time = 0.0
-            self.log.info('%s took: %f ms, executed %s queries in %f seconds', self.name, self.get_duration_milliseconds(),
-                                                                               sql_count, sql_time)
-            if (connection is not None and settings is not None and hasattr(settings, 'PROFILING_SQL_QUERIES') and
-                settings.PROFILING_SQL_QUERIES and sql_count > 0) or self.profile_sql:
-                for query in connection.queries[self.pre_queries_cnt:]:
-                    self.log.info('(%s) %s', query.get('time'), query.get('sql'))
+        if self.__can_profile_sql():
+            sql_count, sql_time = 0, 0.0
+            for connection_name in self.connection_names:
+                sql_stat = self.__get_sql_stats_for_connection(connection_name)
+                sql_count, sql_time = sql_count + sql_stat[0], sql_time + sql_stat[1]
+            self.log.info('%s took: %f ms, executed %s queries in %f seconds', self.name, self.get_duration_milliseconds(), sql_count, sql_time,
+                          extra={
+                              'performance': {
+                                  'duration_seconds': self.get_duration_seconds(),
+                                  'duration_miliseconds': self.get_duration_milliseconds(),
+                                  'duration_microseconds': self.get_duration_microseconds()
+                              }
+                          })
+            if self.__can_profile_sql() and sql_count:
+                for connection_name in self.connection_names:
+                    for query in connections[connection_name].queries[self.pre_queries_cnt[connection_name]:]:
+                        self.log.debug('(%s) %s', query.get('time'), query.get('sql'), extra={
+                            'query': query.get('sql'),
+                            'time': query.get('time')
+                        })
         else:
-            self.log.info('%s took: %f ms', self.name, self.get_duration_milliseconds())
+            self.log.info('%s took: %f ms', self.name, self.get_duration_milliseconds(), extra={
+                'performance': {
+                    'duration_seconds': self.get_duration_seconds(),
+                    'duration_miliseconds': self.get_duration_milliseconds(),
+                    'duration_microseconds': self.get_duration_microseconds()
+                }
+            })
 
     def __enter__(self):
         self.start()
@@ -134,6 +160,18 @@ class Profiler(object):
             self.log.exception('%s: Exception "%s" with value "%s" intercepted while profiling', self.name, exc_type, exc_value)
         self.stop()
         return False
+
+    def __can_profile_sql(self):
+        return connections is not None and (getattr(settings, 'PROFILING_SQL_QUERIES', False) or self.profile_sql)
+
+    def __get_sql_stats_for_connection(self, connection_name):
+        pre_queries_cnt = self.pre_queries_cnt[connection_name]
+        sql_count = len(connections[connection_name].queries) - pre_queries_cnt
+        if sql_count > 0:
+            sql_time = sum([float(q['time']) for q in connections[connection_name].queries[pre_queries_cnt:pre_queries_cnt + sql_count]])
+        else:
+            sql_time = 0.0
+        return sql_count, sql_time
 
 
 def profile(*fn, **options):
@@ -204,7 +242,7 @@ def profile(*fn, **options):
             return functools.update_wrapper(wrapper, func)
         except AttributeError:
             return wrapper
-    
+
     if fn and inspect.isfunction(fn[0]):
         # Called with no parameter
         return decorator(fn[0])
