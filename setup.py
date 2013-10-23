@@ -18,7 +18,7 @@ setup(
     author=u'Vladimír Gorej',
     author_email='gorej@codescale.net',
     url='http://www.codescale.net/en/community#django-profiler',
-    download_url='http://github.com/char0n/django-profiler/tarball/master',
+    download_url='http://github.com/CodeScaleInc/django-profiler/tarball/master',
     license='BSD',
     keywords = 'django profiler profiling code profile',
     packages=['profiling'],
