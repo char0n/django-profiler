@@ -181,6 +181,8 @@ def profile(*fn, **options):
     :type profile_sql: bool
     :param stats: whether to use cProfile or profile module to get execution statistics
     :type stats: bool
+    :param stats_filename: filename where stats generated data are dumped
+    :type stats_filename: str
     :param stats_buffer: how to display execution statistics, defaultly put into logging
     :type stats_buffer: file-like object with write method
     :returns: wrapped function object
