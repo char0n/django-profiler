@@ -152,6 +152,19 @@ Using decorator approach. Output will be logged to *profiling.ComplexClass.compl
     def complex_computations():
         #some complex computations
 
+**Example 10**
+
+Using decorator approach. Output will be stored in */tmp/stats* and can be analyzed with pstats module.
+`profile` stats will be logged to *profiling.ComplexClass.complex_computations*.
+
+::
+
+ from profiling import profile
+
+ class ComplexClass(object)
+    @profile(stats=True, stats_filename='/tmp/stats')
+    def complex_computations():
+        #some complex computations
 
 Tests
 -----

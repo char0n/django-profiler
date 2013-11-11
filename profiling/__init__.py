@@ -190,6 +190,7 @@ def profile(*fn, **options):
     """
     profile_sql = options.pop('profile_sql', False)
     stats = options.pop('stats', False)
+    stats_filename = options.pop('stats_filename', None)
     stats_buffer = options.pop('stats_buffer', None)
     if options:
         raise TypeError('Unsupported keyword arguments: %s' % ','.join(options.keys()))
@@ -234,6 +235,9 @@ def profile(*fn, **options):
                 else:
                     logger_name = settings.PROFILING_LOGGER_NAME if settings is not None and hasattr(settings, 'PROFILING_LOGGER_NAME') else __name__
                     logging.getLogger('{0}.{1}'.format(logger_name, profiler_name)).info(statistics)
+
+                if stats_filename is not None:
+                    prof.dump_stats(stats_filename)
             else:
                 with Profiler(profiler_name, profile_sql=profile_sql):
                     to_return = func(*args, **kwargs)
