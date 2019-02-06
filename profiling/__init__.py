@@ -4,9 +4,12 @@ import inspect
 import logging
 import functools
 try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+    from cStringIO import StringIO	
+except ImportError:	
+    try: 
+       from StringIO import StringIO
+    except importError:
+       from io import StringIO
 try:
     import cProfile as profile_module
 except ImportError:
