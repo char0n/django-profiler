@@ -8,7 +8,7 @@ try:
 except ImportError:	
     try: 
        from StringIO import StringIO
-    except importError:
+    except ImportError:
        from io import StringIO
 try:
     import cProfile as profile_module
